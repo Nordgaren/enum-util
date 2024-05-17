@@ -1,0 +1,11 @@
+[package]
+# changeme
+name = "attribute-macro-template"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+members = ["attribute-macro-template-derive", "attribute-macro-template-core"]
+
+[dependencies]
+attribute-macro-template-derive = { version = "0.1.0", path = "attribute-macro-template-derive" }
