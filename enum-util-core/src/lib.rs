@@ -3,10 +3,11 @@
 mod tests;
 
 use proc_macro2::{Span, TokenStream};
-use quote::{quote, TokenStreamExt, ToTokens};
-use syn::{ItemEnum, parse2, Error, Expr, GenericParam, token, ExprLit, LitInt};
-use syn::Lit::Int;
+use quote::{quote, ToTokens, TokenStreamExt};
 use syn::punctuated::Punctuated;
+use syn::token::Comma;
+use syn::Lit::Int;
+use syn::{parse2, token, Error, Expr, ExprLit, GenericParam, ItemEnum, LitInt, TypeParam};
 
 pub fn variant_values_impl(_args: TokenStream, item: TokenStream) -> TokenStream {
     variant_values_internal(_args, item).unwrap_or_else(|e| e.to_compile_error())
@@ -19,7 +20,13 @@ fn variant_values_internal(_args: TokenStream, item: TokenStream) -> Result<Toke
     let len = variants.len();
 
     for (i, variant) in variants.iter_mut().enumerate() {
-        variant.discriminant = Some((token::Eq::default(), Expr::Lit(ExprLit { attrs: vec![], lit: Int(LitInt::new(&format!("{i}"), Span::call_site())) })))
+        variant.discriminant = Some((
+            token::Eq::default(),
+            Expr::Lit(ExprLit {
+                attrs: vec![],
+                lit: Int(LitInt::new(&format!("{i}"), Span::call_site())),
+            }),
+        ))
     }
 
     let name = &enum_item.ident;
@@ -31,7 +38,7 @@ fn variant_values_internal(_args: TokenStream, item: TokenStream) -> Result<Toke
             GenericParam::Type(t) => {
                 t.bounds = Punctuated::new();
                 GenericParam::Type(t.clone())
-            },
+            }
             GenericParam::Const(c) => GenericParam::Type(TypeParam {
                 attrs: vec![],
                 ident: c.ident.clone(),
