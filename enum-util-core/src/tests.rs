@@ -1,11 +1,11 @@
 #![cfg(test)]
 
-use crate::attribute_macro_impl;
+use crate::variant_values_impl;
 use quote::quote;
 
 #[test]
 fn test() {
-    let after = attribute_macro_impl(quote!(), quote!());
+    let after = variant_values_impl(quote!(), quote!());
     assert_ne!(
         after.to_string(),
         ""
