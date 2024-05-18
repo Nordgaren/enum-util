@@ -4,12 +4,12 @@ mod tests;
 
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, TokenStreamExt, ToTokens};
-use syn::{ItemEnum, parse2, Error, token, Expr, ExprLit, LitInt};
+use syn::{ItemEnum, parse2, Error, Expr, GenericParam, token, ExprLit, LitInt};
 use syn::Lit::Int;
+use syn::punctuated::Punctuated;
 
 pub fn variant_values_impl(_args: TokenStream, item: TokenStream) -> TokenStream {
     variant_values_internal(_args, item).unwrap_or_else(|e| e.to_compile_error())
-
 }
 
 fn variant_values_internal(_args: TokenStream, item: TokenStream) -> Result<TokenStream, Error> {
@@ -23,9 +23,20 @@ fn variant_values_internal(_args: TokenStream, item: TokenStream) -> Result<Toke
     }
 
     let name = &enum_item.ident;
+    let generics = &enum_item.generics;
+    let mut generics_cleaned = enum_item.generics.clone();
+    for param in generics_cleaned.params.iter_mut() {
+        match param {
+            GenericParam::Type(t) => t.bounds = Punctuated::new(),
+            GenericParam::Lifetime(_) => {}
+            GenericParam::Const(_) => {}
+        }
+    }
+    let where_clause = &generics.where_clause;
+    eprintln!("{:?}", where_clause);
 
     let impls = quote! {
-        impl #name {
+        impl #generics #name #generics_cleaned #where_clause {
             const VARIANT_COUNT: usize = #len;
             const fn discriminant(&self) -> usize {
                 unsafe { *(self as *const Self as *const usize) }
