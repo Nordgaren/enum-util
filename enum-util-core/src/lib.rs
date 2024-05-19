@@ -40,7 +40,7 @@ fn variant_values_internal(_args: TokenStream, item: TokenStream) -> Result<Toke
     let mut vals = Punctuated::new();
     for variant in &enum_item.variants {
         let field = match variant.fields {
-            Fields::Named(_) => quote! {(_)},
+            Fields::Named(_) => quote! { { .. }},
             Fields::Unnamed(_) => quote! {(_)},
             Fields::Unit => quote! {},
         };
