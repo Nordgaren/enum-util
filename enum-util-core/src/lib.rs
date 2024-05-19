@@ -67,8 +67,8 @@ fn variant_values_internal(_args: TokenStream, item: TokenStream) -> Result<Toke
 
     let impls = quote! {
         impl #generics #name #generics_cleaned #where_clause {
-            const VARIANT_COUNT: usize = #len;
-            const fn discriminant(&self) -> #repr {
+            pub const VARIANT_COUNT: usize = #len;
+            pub const fn discriminant(&self) -> #repr {
                 match self {
                     #vals
                 }
