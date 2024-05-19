@@ -7,7 +7,8 @@ use quote::{quote, ToTokens, TokenStreamExt, format_ident};
 use syn::punctuated::Punctuated;
 use syn::token::Comma;
 use syn::Lit::Int;
-use syn::{parse2, token, Error, Expr, ExprLit, GenericParam, ItemEnum, LitInt, TypeParam, Generics, Attribute, AttrStyle, Path, PathSegment};
+use syn::{parse2, token, Error, Expr, ExprLit, GenericParam, ItemEnum, LitInt, TypeParam, Generics, Attribute, AttrStyle, Path, PathSegment, Fields};
+use syn::parse::Parser;
 use syn::spanned::Spanned;
 
 pub fn variant_values_impl(_args: TokenStream, item: TokenStream) -> TokenStream {
@@ -36,18 +37,47 @@ fn variant_values_internal(_args: TokenStream, item: TokenStream) -> Result<Toke
     let mut generics_cleaned = get_cleaned_generics(&enum_item);
     let where_clause = &generics.where_clause;
 
+    let mut vals = Punctuated::new();
+    for variant in &enum_item.variants {
+        let field = match variant.fields {
+            Fields::Named(_) => quote! {(_)},
+            Fields::Unnamed(_) => quote! {(_)},
+            Fields::Unit => quote! {},
+        };
+        let v_ident = &variant.ident;
+        let v_disc = variant.discriminant.clone().unwrap().1;
+        vals.push_value(quote!{ #name::#v_ident #field => #v_disc});
+        vals.push_punct(Comma::default());
+    }
+
+    let from = quote! {
+         impl #generics From<&#name #generics_cleaned> for #repr #where_clause {
+            fn from(value: &#name #generics_cleaned) -> Self {
+                value.discriminant()
+            }
+        }
+        impl #generics From<#name #generics_cleaned> for #repr #where_clause {
+            fn from(value: #name #generics_cleaned) -> Self {
+                Self::from(&value)
+            }
+        }
+    };
+
+    eprintln!("{}", from.to_string());
 
     let impls = quote! {
         impl #generics #name #generics_cleaned #where_clause {
             const VARIANT_COUNT: usize = #len;
             const fn discriminant(&self) -> #repr {
-                unsafe { *(self as *const Self as *const #repr) }
+                match self {
+                    #vals
+                }
             }
         }
     };
 
     let mut tokenstream = enum_item.to_token_stream();
-    tokenstream.append_all(impls);
+    tokenstream.append_all([impls, from]);
     Ok(tokenstream)
 }
 
@@ -63,10 +93,10 @@ fn enforce_repr_inttype(input: &mut ItemEnum) -> Result<Ident, Error> {
                     format!(
                         "Found `#[repr{}]` attribute. Type must have `#[repr(inttype)]` attribute.",
                         tokens
-                    )))
+                    )));
             }
 
-            return Ok(format_ident!("{}", tokens.trim_matches(&['(', ')'])))
+            return Ok(format_ident!("{}", tokens.trim_matches(&['(', ')'])));
         }
     }
 
