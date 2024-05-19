@@ -63,8 +63,6 @@ fn variant_values_internal(_args: TokenStream, item: TokenStream) -> Result<Toke
         }
     };
 
-    eprintln!("{}", from.to_string());
-
     let impls = quote! {
         impl #generics #name #generics_cleaned #where_clause {
             pub const VARIANT_COUNT: usize = #len;
