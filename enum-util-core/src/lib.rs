@@ -37,7 +37,7 @@ fn variant_values_internal(_args: TokenStream, item: TokenStream) -> Result<Toke
     let mut generics_cleaned = get_cleaned_generics(&enum_item);
     let where_clause = &generics.where_clause;
 
-    let mut vals = Punctuated::new();
+    let mut vals = Punctuated::<TokenStream, Comma>::new();
     for variant in &enum_item.variants {
         let field = match variant.fields {
             Fields::Named(_) => quote! { { .. }},
@@ -46,8 +46,7 @@ fn variant_values_internal(_args: TokenStream, item: TokenStream) -> Result<Toke
         };
         let v_ident = &variant.ident;
         let v_disc = variant.discriminant.clone().unwrap().1;
-        vals.push_value(quote!{ #name::#v_ident #field => #v_disc});
-        vals.push_punct(Comma::default());
+        vals.push(quote!{ #name::#v_ident #field => #v_disc});
     }
 
     let from = quote! {
@@ -153,9 +152,9 @@ fn get_cleaned_generics(enum_item: &ItemEnum) -> Generics {
             _ => continue,
         };
 
-        cleaned_params.push_value(new_param);
-        cleaned_params.push_punct(Comma::default())
+        cleaned_params.push(new_param);
     }
+
 
     generics_cleaned.params = cleaned_params;
 
